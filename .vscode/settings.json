@@ -1,0 +1,15 @@
+{
+	"files.associations": {
+		"string": "c",
+		"vector": "c",
+		"atomic": "cpp",
+		"array": "cpp",
+		"deque": "cpp",
+		"unordered_map": "cpp",
+		"string_view": "cpp",
+		"initializer_list": "cpp",
+		"iosfwd": "cpp",
+		"fstream": "cpp",
+		"memory": "cpp"
+	}
+}
