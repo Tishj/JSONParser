@@ -98,7 +98,7 @@ static string Value(vector<unique_ptr<Element>>& children, const JSONValue& val,
 			return std::to_string(val.bigint);
 		}
 		case ElementType::JSON_STRING: {
-			return *((string*)(val.pointer));
+			return "\"" + *((string*)(val.pointer)) + "\"";
 		}
 		case ElementType::JSON_NULL: {
 			return "null";
