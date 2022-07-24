@@ -121,6 +121,10 @@ static string Value(vector<unique_ptr<Element>>& children, const JSONValue& val,
 			for (size_t i = 0; i < children.size(); i++) {
 				result += children[i]->ToString(indent_level + 1);
 				if (i + 1 < children.size()) {
+					auto child_type = children[i]->Type();
+					if (child_type == ElementType::JSON_ARRAY || child_type == ElementType::JSON_OBJECT) {
+						result += Indent(indent_level + 1);
+					}
 					result += ",";
 				}
 				result += "\n";

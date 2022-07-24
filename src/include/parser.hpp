@@ -10,26 +10,11 @@ namespace json {
 
 class ParsedJSON;
 
-enum class ParseTokens {
-	CBRACE_OPEN,
-	CBRACE_CLOSE,
-	DQUOTE_OPEN,
-	DQUOTE_CLOSE,
-	NUMBER,
-	BOOLEAN,
-	COLON,
-	ARRAY_OPEN,
-	ARRAY_CLOSE,
-	COMMA,
-	NULL_TYPE
-};
-
 enum class ParseState {
 	OUT,	//! Initial state
 	WORD,	//! Name of a JSON item
 	VALUE,	//! Value of a JSON item
 	IN,		//! Between Name and Value
-	TAIL	//! Last portion towards the closing
 };
 
 enum class StateResult {
