@@ -1,29 +1,11 @@
 #include "parsed_json.hpp"
 #include "element.hpp"
 
+#include <assert.h>
+
 namespace json {
 
-static void DeletePointerObject(ElementType type, uintptr_t ptr) {
-	switch (type) {
-		case ElementType::JSON_STRING: {
-			auto pointer = (string*)ptr;
-			delete(pointer);
-			break;
-		}
-		case ElementType::JSON_ARRAY:
-		case ElementType::JSON_OBJECT: {
-			auto pointer = (ParsedJSON*)ptr;
-			delete(pointer);
-			break;
-		}
-		default: {
-			break;
-		}
-	}
-}
-
 ParsedJSON::~ParsedJSON() {
-	DeletePointerObject(type, this->value_.pointer);
 }
 
 void ParsedJSON::SetName(string name)
@@ -32,7 +14,7 @@ void ParsedJSON::SetName(string name)
 }
 
 void ParsedJSON::SetPtrValue(uintptr_t ptr) {
-	DeletePointerObject(type, this->value_.pointer);
+	assert(this->value_.pointer == 0);
 	this->value_.pointer = ptr;
 }
 
@@ -61,6 +43,19 @@ void ParsedJSON::SetValueBoolean(bool value)
 	this->value_.boolean = value;
 }
 
+ElementType UpgradeType(ElementType current, ElementType new_element) {
+	if (current == ElementType::JSON_NULL) {
+		return new_element;
+	}
+	if (new_element == ElementType::JSON_NULL) {
+		return current;
+	}
+	if (current != new_element) {
+		throw std::runtime_error("JSON types are not compatible!");
+	}
+	return current;
+}
+
 void ParsedJSON::AddChild(ParsedJSON* child)
 {
 	if (!value_.pointer) {
@@ -68,11 +63,13 @@ void ParsedJSON::AddChild(ParsedJSON* child)
 	}
 	else {
 		auto chain = (ParsedJSON*)value_.pointer;
-		if (type == ElementType::JSON_ARRAY && chain->type != child->type) {
-			throw std::runtime_error("JSON array malformed");
-		}
 		chain->list.AddBack(&child->list);
 	}
+
+	// // Check array constraints
+	// if (type == ElementType::JSON_ARRAY) {
+	// 	array_type = UpgradeType(array_type, child->type);
+	// }
 }
 
 static element_create_fun_t GetFinalizeFunction(ElementType type) {
@@ -82,6 +79,7 @@ static element_create_fun_t GetFinalizeFunction(ElementType type) {
 	case ElementType::JSON_NULL: return Element::NULL_ELEM;
 	case ElementType::JSON_STRING: return Element::STRING;
 	case ElementType::JSON_OBJECT: return Element::GROUP;
+	case ElementType::JSON_ARRAY: return Element::ARRAY;
 	default:
 		throw std::runtime_error("GetFinalizeFunction - type not implemented");
 	}

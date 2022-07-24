@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "parsed_json.hpp"
+#include "element.hpp"
 
 #include <iostream>
 #include "fstream"
@@ -21,9 +22,11 @@ string GetFileContents(string file_path) {
 
 int main() {
 	string file_content = GetFileContents("./config.json");
-	json::Parser parser(file_content.begin(), file_content.end());
+	auto start_of_content = file_content.begin();
+	json::Parser parser(start_of_content, file_content.end());
 	auto product = parser.Produce();
 	auto object = product->Finalize();
+	cout << object->ToString(0) << "\n";
 
 	delete(product);
 	delete(object);

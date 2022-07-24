@@ -43,16 +43,19 @@ class Element;
 // Internally used half-product during parsing
 class ParsedJSON {
 public:
-	ParsedJSON() : list(this) {}
-	~ParsedJSON() {}
+	ParsedJSON() : list(this) {
+		value_.pointer = 0;
+		array_type = ElementType::JSON_NULL;
+	}
+	~ParsedJSON();
 public:
-	ElementType GetType() {
+	ElementType GetType() const {
 		return this->type;
 	}
-	string GetName() {
+	string GetName() const {
 		return this->name;
 	}
-	JSONValue& GetValue() {
+	const JSONValue& GetValue() const {
 		return this->value_;
 	}
 	void SetName(string name);
@@ -75,6 +78,7 @@ private:
 
 	bool has_value;
 	JSONValue value_;
+	ElementType array_type; //! Keep track of the type of the array, to enable better type error checking
 };
 
 } //namespace json

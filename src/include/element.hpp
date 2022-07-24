@@ -18,13 +18,18 @@ public:
 	static Element GROUP(ParsedJSON json);
 	static Element NULL_ELEM(ParsedJSON json);
 	static Element NUMBER(ParsedJSON json);
+	string ToString(size_t indent_level);
 protected:
-	Element();
+	Element() {
+		name.clear();
+	}
 protected:
 	ElementType type;
 	string name;
 	JSONValue value_;
 	vector<unique_ptr<Element>> children;
+private:
+	void SetBasicValues(const ParsedJSON& json);
 };
 
 typedef Element (*element_create_fun_t)(ParsedJSON);

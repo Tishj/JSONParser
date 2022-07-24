@@ -6,14 +6,15 @@ OBJ_DIR = obj
 
 SRC = 	element.cpp \
 		parsed_json.cpp \
-		parser.cpp
+		parser.cpp \
+		main.cpp
 
 INCLUDE = -I ./src/include
 
 OBJ := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 SRC = $(SRC:%.cpp=$(SRC_DIR)/%.cpp)
 
-CFLAGS = -Wall -Werror -Wextra -std=c++17 #-g -fsanitize=address
+CFLAGS = -Wall -Werror -Wextra -std=c++17 -g #-g -fsanitize=address
 
 all: $(NAME)
 

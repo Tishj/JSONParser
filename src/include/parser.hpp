@@ -40,9 +40,12 @@ enum class StateResult {
 
 class Parser {
 public:
-	Parser(string::iterator& it, const string::iterator& end, ElementType parent = ElementType::JSON_OBJECT) :
+	Parser(string::iterator& it, const string::iterator& end, ElementType parent = ElementType::JSON_ARRAY) :
 		it(it), end(end), parent(parent) {
+			previous_state = ParseState::OUT;
 			current_state = ParseState::OUT;
+			temporary.clear();
+			product = nullptr;
 		}
 public:
 	ParsedJSON* Produce();

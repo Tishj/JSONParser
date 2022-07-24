@@ -21,32 +21,22 @@ StateResult	Parser::StateOut(char c) {
 	if (IsWhitespace(c)) {
 		return StateResult::CONTINUE;
 	}
-	//! Name encountered
-	if (c == '"') {
-		//! Array can only have unnamed elements
-		if (parent == ElementType::JSON_ARRAY) {
-			return StateResult::ERROR;
+	//! Within an array, we only have values
+	if (parent == ElementType::JSON_ARRAY) {
+		product = new ParsedJSON();
+		UpdateState(ParseState::VALUE);
+		if (c == '"') {
+			product->SetType(ElementType::JSON_STRING);
+			return StateResult::CONTINUE;
 		}
-		UpdateState(ParseState::WORD);
-		product = new ParsedJSON();
-		return StateResult::CONTINUE;
+		return StateValue(c);
 	}
-	//! Only array can have unnamed elements
-	if (parent != ElementType::JSON_ARRAY) {
+	if (c != '"') {
 		return StateResult::ERROR;
 	}
-	if (c == '{') {
-		product = new ParsedJSON();
-		product->SetType(ElementType::JSON_OBJECT);
-	}
-	else if (c == '[') {
-		product = new ParsedJSON();
-		product->SetType(ElementType::JSON_ARRAY);
-	}
-	else {
-		return StateResult::ERROR;
-	}
-	UpdateState(ParseState::VALUE);
+	//! Name encountered
+	UpdateState(ParseState::WORD);
+	product = new ParsedJSON();
 	return StateResult::CONTINUE;
 }
 
@@ -56,12 +46,23 @@ StateResult Parser::StateWord(char c)
 	//! name finished
 	if (c == '"') {
 		product->SetName(temporary);
-		temporary = "";
-		UpdateState(ParseState::OUT);
+		temporary.clear();
+		UpdateState(ParseState::IN);
 		return StateResult::CONTINUE;
 	}
 	temporary += c;
 	return StateResult::CONTINUE;
+}
+
+static bool	IsInteger(const string& str) {
+	if (str.empty()) {
+		return false;
+	}
+	size_t i = 0;
+	if (str[i] == '-') {
+		i++;
+	}
+	return str.find_first_not_of("0123456789", i) == string::npos;
 }
 
 void Parser::ConvertValue() {
@@ -73,7 +74,7 @@ void Parser::ConvertValue() {
 		product->SetType(ElementType::JSON_NULL);
 		product->SetValueNULL();
 	}
-	else if (temporary.find_first_not_of("0123456789") == string::npos) {
+	else if (IsInteger(temporary)) {
 		product->SetType(ElementType::JSON_INTEGER);
 		product->SetValueNumber(stoi(temporary));
 	}
@@ -87,9 +88,13 @@ StateResult Parser::StateValue(char c)
 	assert(product);
 	//No change yet
 	if (IsWhitespace(c)) {
-		if (previous_state != ParseState::VALUE) {
+		//! Value is finished, no whitespace can be in the middle of a value
+		if (product->GetType() != ElementType::JSON_STRING && !temporary.empty()) {
+			ConvertValue();
+			assert(product && product->GetType() != ElementType::UNKNOWN);
 			return StateResult::DONE;
 		}
+		UpdateState(ParseState::VALUE);
 		return StateResult::CONTINUE;
 	}
 	auto product_type = product->GetType();
@@ -112,7 +117,8 @@ StateResult Parser::StateValue(char c)
 		case ElementType::JSON_STRING: {
 			if (c == '"') {
 				product->SetValueString(temporary);
-				temporary = "";
+				temporary.clear();
+				it++;
 				return StateResult::DONE;
 			}
 			temporary += c;
@@ -121,6 +127,7 @@ StateResult Parser::StateValue(char c)
 		default: {
 			if (c == ',') {
 				ConvertValue();
+				assert(product && product->GetType() != ElementType::UNKNOWN);
 				return StateResult::DONE;
 			}
 			if (c == '"') {
@@ -129,12 +136,19 @@ StateResult Parser::StateValue(char c)
 				}
 				product->SetType(ElementType::JSON_STRING);
 			}
+			else if (c == '{') {
+				product->SetType(ElementType::JSON_OBJECT);
+			}
+			else if (c == '[') {
+				product->SetType(ElementType::JSON_ARRAY);
+			}
 			else {
 				temporary += c;
 			}
 			break;
 		}
 	}
+	UpdateState(ParseState::VALUE);
 	return StateResult::CONTINUE;
 }
 
@@ -170,7 +184,10 @@ ParsedJSON* Parser::Produce()
 				break;
 			}
 			case StateResult::ERROR: throw std::runtime_error("Failed to parse");
-			case StateResult::DONE: return product;
+			case StateResult::DONE: {
+				assert(product && product->GetType() != ElementType::UNKNOWN);
+				return product;
+			}
 		}
 	}
 	return nullptr;
